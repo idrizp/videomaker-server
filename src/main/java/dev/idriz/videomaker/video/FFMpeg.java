@@ -12,18 +12,16 @@ public class FFMpeg {
      * @param clip the clip
      * @return a completable future
      */
-    public static CompletableFuture<File> createClipVideo(Video.Clip clip) {
+    public static CompletableFuture<File> createClipVideo(VideoUtils.Clip clip, String stockVideoURL, String audioFilePath) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 File outputFile = File.createTempFile("videomaker", ".mp4", new File("/tmp"));
+                File downloadedVideo = VideoUtils.downloadVideo(clip.getFilePath());
 
-                File downloadedVideo = Video.downloadVideo(clip.url());
-                File downloadedAudio = Video.downloadAudio(clip.audioUrl());
-
-                String arguments = replaceAudio(downloadedAudio.getAbsolutePath()) +
+                String arguments = replaceAudio(audioFilePath) +
                         " " +
                         withVideoFilters(
-                                withTextVideoFilter(clip.textSections().getFirst()).toString(),
+                                withTextVideoFilter(clip.getTextSections().getFirst()).toString(),
                                 "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2"
                         ) + " -shortest";
                 runFFMpegCommand(
@@ -31,9 +29,6 @@ public class FFMpeg {
                         arguments,
                         outputFile.getAbsolutePath()
                 ).join();
-
-                downloadedVideo.delete();
-                downloadedAudio.delete();
                 return outputFile;
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -94,7 +89,7 @@ public class FFMpeg {
     }
 
     public static StringBuilder withTextVideoFilter(
-            Video.TextSection text
+            VideoUtils.TextSection text
     ) {
         return new StringBuilder()
                 .append("drawtext=text='").append(text.line()).append("':")

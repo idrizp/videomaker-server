@@ -1,4 +1,4 @@
-package dev.idriz.videomaker.security;
+package dev.idriz.videomaker.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

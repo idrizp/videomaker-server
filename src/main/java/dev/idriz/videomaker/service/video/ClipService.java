@@ -3,11 +3,9 @@ package dev.idriz.videomaker.service.video;
 import dev.idriz.videomaker.list.ListUtils;
 import dev.idriz.videomaker.service.LLMQueryService;
 import dev.idriz.videomaker.video.FFMpeg;
-import dev.idriz.videomaker.video.Video;
+import dev.idriz.videomaker.video.VideoUtils;
 import org.springframework.stereotype.Service;
 
-import java.awt.*;
-import java.io.File;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -18,7 +16,11 @@ public class ClipService {
     private final StockVideoService stockVideoService;
     private final TextToSpeechService textToSpeechService;
 
-    public ClipService(LLMQueryService queryService, StockVideoService stockVideoService, TextToSpeechService textToSpeechService) {
+    public ClipService(
+            LLMQueryService queryService,
+            StockVideoService stockVideoService,
+            TextToSpeechService textToSpeechService
+    ) {
         this.queryService = queryService;
         this.stockVideoService = stockVideoService;
         this.textToSpeechService = textToSpeechService;
@@ -31,7 +33,7 @@ public class ClipService {
                         Do not return anything else except the tags. All tags must be lowercase. The tags must be separated by commas.
                         At most 2 tags may be returned. Always orient the tag to the main context, in every line. 
                         At least one tag must be fully related to the main context.
-                        
+                                                
                         Context:
                         """ + prompt,
                 text
@@ -60,22 +62,25 @@ public class ClipService {
         });
     }
 
-    public CompletableFuture<File> createClip(String prompt, String line, String voice) {
+    public CompletableFuture<VideoUtils.Clip> createClip(String prompt, String line, String voice) {
         return getSuitableStockVideoForText(prompt, line).thenCompose(url -> {
             var audio = textToSpeechService.useTTS(line, voice).join();
-            var clip = new Video.Clip(url, audio, List.of(new Video.TextSection(line,
+            var audioFile = VideoUtils.downloadAudio(audio);
+            var clip = new VideoUtils.Clip(url, audio, List.of(new VideoUtils.TextSection(line,
                     "Arial",
                     20,
                     0,
                     0,
                     0,
                     0,
-                    Color.WHITE,
+                    "#ffffff",
                     0,
-                    Video.TextSection.computeTimeToRead(line)
+                    VideoUtils.TextSection.computeTimeToRead(line)
             )));
-            var file = FFMpeg.createClipVideo(clip).join();
-            return CompletableFuture.completedFuture(file);
+            var file = FFMpeg.createClipVideo(clip, url, audioFile.getAbsolutePath()).join();
+            clip.setFilePath(file.getAbsolutePath());
+            clip.setAudioFilePath(audioFile.getAbsolutePath());
+            return CompletableFuture.completedFuture(clip);
         });
     }
 

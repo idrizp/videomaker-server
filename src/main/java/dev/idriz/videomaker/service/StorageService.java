@@ -29,11 +29,11 @@ public class StorageService {
     /**
      * Uploads a file to S3 and deletes it from the local filesystem
      *
-     * @param path the path of the file to upload
-     * @return a CompletableFuture that will complete when the file has been uploaded and deleted
+     * @param path the <b>absolute</b> path of the file to upload
+     * @return a CompletableFuture that will complete when the file has been uploaded and deleted with the URL of the file
      */
-    public CompletableFuture<Void> uploadAndDelete(final String path) {
-        return CompletableFuture.runAsync(() -> {
+    public CompletableFuture<String> uploadAndDelete(final String path) {
+        return CompletableFuture.supplyAsync(() -> {
             File file = new File(path);
             if (!file.exists()) {
                 throw new IllegalStateException("File does not exist: " + path);
@@ -43,6 +43,8 @@ public class StorageService {
                     .key(file.getName())
                     .build(), RequestBody.fromFile(file));
             file.delete();
+
+            return s3Client.utilities().getUrl(builder -> builder.bucket(awsBucketName).key(file.getName())).toExternalForm();
         });
     }
 

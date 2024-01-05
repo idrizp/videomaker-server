@@ -28,9 +28,6 @@ public class AppUser {
     private String lastName;
 
     @Column
-    private String phoneNumber;
-
-    @Column
     private String email;
 
     @Column
@@ -130,11 +127,4 @@ public class AppUser {
         this.videos = videos;
     }
 
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
-
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
 }

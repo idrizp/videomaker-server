@@ -3,6 +3,7 @@ package dev.idriz.videomaker.repository;
 import dev.idriz.videomaker.entity.Video;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -11,10 +12,10 @@ import java.util.UUID;
 public interface VideoRepository extends JpaRepository<Video, UUID> {
 
     /**
-     * Find a video by the user id
+     * Finds videos by the user id
      * @param userId The user id
-     * @return The video
+     * @return The videos
      */
-    Video findVideoByUserId(UUID userId);
+    List<Video> findVideosByUserId(UUID userId);
 
 }

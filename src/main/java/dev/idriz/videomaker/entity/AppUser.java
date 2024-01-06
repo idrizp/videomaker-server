@@ -1,9 +1,6 @@
 package dev.idriz.videomaker.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -16,6 +13,7 @@ import java.util.UUID;
 public class AppUser {
 
     @Id
+    @GeneratedValue
     private UUID id;
 
     @Column

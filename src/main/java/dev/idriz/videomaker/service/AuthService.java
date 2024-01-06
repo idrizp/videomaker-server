@@ -45,7 +45,9 @@ public class AuthService {
     public AppUser createUser(
             String username,
             String password,
-            String email
+            String email,
+            String firstName,
+            String lastName
     ) {
         if (userRepository.findByUsernameEqualsOrEmailEqualsIgnoreCase(username, email).isPresent()) {
             throw new IllegalArgumentException("User already exists");
@@ -54,6 +56,8 @@ public class AuthService {
         AppUser user = new AppUser();
 
         user.setUsername(username);
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
         user.setPassword(passwordEncoder.encode(password));
         user.setEnabled(false);
         user.setBalance(BigInteger.ZERO);
@@ -97,6 +101,10 @@ public class AuthService {
         )));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    public static AppUser getAuthenticatedUser() {
+        return (AppUser) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 
 }

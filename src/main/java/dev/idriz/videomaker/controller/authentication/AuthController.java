@@ -30,7 +30,9 @@ public class AuthController {
             var user = authService.createUser(
                     request.username(),
                     request.password(),
-                    request.email()
+                    request.email(),
+                    request.firstName(),
+                    request.lastName()
             );
             return ResponseEntity.ok(new AuthResponse(jwt.createToken(user)));
         } catch (IllegalArgumentException e) {
@@ -53,7 +55,9 @@ public class AuthController {
     public record RegisterRequest(
             @NotBlank @Size(min = 3, max = 64) String username,
             @NotBlank @Size(min = 8, max = 64) String password,
-            @NotBlank @Email String email
+            @NotBlank @Email String email,
+            @NotBlank @Size(min = 3, max = 64) String firstName,
+            @NotBlank @Size(min = 3, max = 64) String lastName
     ) {
     }
 

@@ -99,8 +99,8 @@ public class VideoUtils {
         private int width;
         private int height;
         private String hexColor;
-        private double start;
-        private double end;
+        private double startTime;
+        private double endTime;
 
         public TextSection(
                 String line,
@@ -111,8 +111,8 @@ public class VideoUtils {
                 int width,
                 int height,
                 String hexColor,
-                double start,
-                double end
+                double startTime,
+                double endTime
         ) {
             this.line = line;
             this.fontFamily = fontFamily;
@@ -122,8 +122,8 @@ public class VideoUtils {
             this.width = width;
             this.height = height;
             this.hexColor = hexColor;
-            this.start = start;
-            this.end = end;
+            this.startTime = startTime;
+            this.endTime = endTime;
         }
 
         public TextSection() {
@@ -167,11 +167,11 @@ public class VideoUtils {
         }
 
         public double start() {
-            return start;
+            return startTime;
         }
 
         public double end() {
-            return end;
+            return endTime;
         }
     }
 }

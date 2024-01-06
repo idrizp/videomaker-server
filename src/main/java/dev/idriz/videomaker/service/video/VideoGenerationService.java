@@ -2,6 +2,7 @@ package dev.idriz.videomaker.service.video;
 
 import dev.idriz.videomaker.entity.Video;
 import dev.idriz.videomaker.repository.VideoRepository;
+import dev.idriz.videomaker.service.BalanceService;
 import dev.idriz.videomaker.service.StorageService;
 import dev.idriz.videomaker.video.FFMpeg;
 import dev.idriz.videomaker.video.VideoUtils;
@@ -19,13 +20,15 @@ public class VideoGenerationService {
     private final ClipService clipService;
     private final VideoRepository videoRepository;
     private final StorageService storageService;
+    private final BalanceService balanceService;
 
     public VideoGenerationService(
-            ClipService clipService, VideoRepository videoRepository, StorageService storageService
+            ClipService clipService, VideoRepository videoRepository, StorageService storageService, BalanceService balanceService
     ) {
         this.clipService = clipService;
         this.videoRepository = videoRepository;
         this.storageService = storageService;
+        this.balanceService = balanceService;
     }
 
     public CompletableFuture<Video> generateVideo(String prompt, String title, String voice) {
@@ -33,8 +36,12 @@ public class VideoGenerationService {
         Video video = new Video();
         video.setGenerationPrompt(prompt);
         video.setTitle(title);
+        video.setCost(balanceService.getCost(lines));
+        video.setGenerationStart(System.currentTimeMillis());
         video.setClips(new ArrayList<>());
         video.setVoice(voice);
+
+        long start = System.currentTimeMillis();
         if (lines.length == 0) {
             return CompletableFuture
                     .failedFuture(new IllegalArgumentException("Prompt must have at least one line break."));
@@ -72,7 +79,10 @@ public class VideoGenerationService {
                         }
 
                         storageService.uploadAndDelete(output.getAbsolutePath()).join();
+
                         video.setUrl(output.getName());
+                        video.setGenerationEnd(System.currentTimeMillis());
+
                         videoRepository.save(video);
                         return CompletableFuture.completedFuture(video);
                     } catch (IOException e) {

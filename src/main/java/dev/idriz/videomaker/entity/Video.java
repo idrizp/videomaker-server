@@ -3,11 +3,12 @@ package dev.idriz.videomaker.entity;
 import dev.idriz.videomaker.video.VideoUtils;
 import jakarta.persistence.*;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-@Entity
+@Entity(name = "video")
 public class Video {
 
     @Id
@@ -25,15 +26,28 @@ public class Video {
     @Column
     private String generationPrompt;
 
+    @Column
+    private BigInteger cost;
+
+    @Column
+    private long generationStart;
+
+    @Column
+    private long generationEnd;
+
     @ManyToOne
     private AppUser user;
 
     @OneToMany(mappedBy = "video", orphanRemoval = true)
-    @OrderBy("clip.ordinal")
+    @OrderBy("ordinal ASC")
     private List<Clip> clips = new ArrayList<>();
 
     public List<Clip> getClips() {
         return clips;
+    }
+
+    public boolean isPending() {
+        return url == null;
     }
 
     public void setClips(List<Clip> clips) {
@@ -48,6 +62,30 @@ public class Video {
         c.setTextSection(clip.getTextSections().getFirst());
         c.setVideo(this);
         clips.add(c);
+    }
+
+    public BigInteger getCost() {
+        return cost;
+    }
+
+    public long getGenerationEnd() {
+        return generationEnd;
+    }
+
+    public long getGenerationStart() {
+        return generationStart;
+    }
+
+    public void setGenerationEnd(long generationEnd) {
+        this.generationEnd = generationEnd;
+    }
+
+    public void setGenerationStart(long generationStart) {
+        this.generationStart = generationStart;
+    }
+
+    public void setCost(BigInteger cost) {
+        this.cost = cost;
     }
 
     public String getVoice() {
@@ -98,7 +136,7 @@ public class Video {
         this.user = user;
     }
 
-    @Entity
+    @Entity(name = "clip")
     public static class Clip {
 
         @Id

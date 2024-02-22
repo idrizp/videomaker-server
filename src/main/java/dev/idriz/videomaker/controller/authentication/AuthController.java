@@ -1,11 +1,13 @@
 package dev.idriz.videomaker.controller.authentication;
 
+import dev.idriz.videomaker.dto.ErrorResponse;
 import dev.idriz.videomaker.service.AuthService;
 import dev.idriz.videomaker.token.JWT;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,7 +38,8 @@ public class AuthController {
             );
             return ResponseEntity.ok(new AuthResponse(jwt.createToken(user)));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("User already exists");
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(new ErrorResponse("A user with that username or email already exists"));
         }
     }
 
@@ -44,7 +47,8 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) {
         var user = authService.login(request.usernameOrEmail(), request.password());
         if (user == null) {
-            return ResponseEntity.badRequest().body("Invalid username or password");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse("Invalid username or password"));
         }
         return ResponseEntity.ok(new AuthResponse(jwt.createToken(user)));
     }

@@ -1,6 +1,8 @@
 package dev.idriz.videomaker.service.video;
 
+import dev.idriz.videomaker.entity.AppUser;
 import dev.idriz.videomaker.entity.Video;
+import dev.idriz.videomaker.repository.ClipRepository;
 import dev.idriz.videomaker.repository.VideoRepository;
 import dev.idriz.videomaker.service.BalanceService;
 import dev.idriz.videomaker.service.StorageService;
@@ -17,21 +19,27 @@ import java.util.concurrent.CompletableFuture;
 @Service
 public class VideoGenerationService {
 
+    private final ClipRepository clipRepository;
     private final ClipService clipService;
     private final VideoRepository videoRepository;
     private final StorageService storageService;
     private final BalanceService balanceService;
 
     public VideoGenerationService(
-            ClipService clipService, VideoRepository videoRepository, StorageService storageService, BalanceService balanceService
+            ClipRepository clipRepository,
+            ClipService clipService,
+            VideoRepository videoRepository,
+            StorageService storageService,
+            BalanceService balanceService
     ) {
+        this.clipRepository = clipRepository;
         this.clipService = clipService;
         this.videoRepository = videoRepository;
         this.storageService = storageService;
         this.balanceService = balanceService;
     }
 
-    public CompletableFuture<Video> generateVideo(String prompt, String title, String voice) {
+    public CompletableFuture<Video> generateVideo(AppUser appUser, String prompt, String title, String voice) {
         String[] lines = prompt.split("\n");
         Video video = new Video();
         video.setGenerationPrompt(prompt);
@@ -41,7 +49,6 @@ public class VideoGenerationService {
         video.setClips(new ArrayList<>());
         video.setVoice(voice);
 
-        long start = System.currentTimeMillis();
         if (lines.length == 0) {
             return CompletableFuture
                     .failedFuture(new IllegalArgumentException("Prompt must have at least one line break."));
@@ -52,7 +59,7 @@ public class VideoGenerationService {
         }
         return CompletableFuture
                 .allOf(snippets.toArray(new CompletableFuture[0]))
-                .thenCompose(v -> {
+                .thenApply(v -> {
                     try {
                         File output = File.createTempFile("videomaker", ".mp4", new File("/tmp"));
                         String[] paths = new String[snippets.size()];
@@ -60,19 +67,21 @@ public class VideoGenerationService {
                             var clip = snippets.get(i).join();
                             paths[i] = snippets.get(i).join().getFilePath();
 
-                            storageService.uploadAndDelete(clip.getFilePath()).join();
-                            storageService.uploadAndDelete(clip.getAudioFilePath()).join();
+                            var fileUrl = storageService.upload(clip.getFilePath()).join();
+                            var audioUrl = storageService.upload(clip.getAudioFilePath()).join();
 
                             Video.Clip clipEntity = new Video.Clip();
                             clipEntity.setOrdinal(i);
+
                             clipEntity.setVideo(video);
+                            clipEntity.setTextSection(clip.getTextSections().getFirst());
 
-                            clipEntity.setUrl(clip.getFilePath());
-                            clipEntity.setAudioUrl(clip.getAudioFileName());
+                            clipEntity.setAudioUrl(audioUrl);
+                            clipEntity.setUrl(fileUrl);
 
-                            clipEntity.setUrl(clip.getFileName());
                             video.getClips().add(clipEntity);
                         }
+                        // Save all the clips into the database.
                         FFMpeg.runFFMpegCommand(FFMpeg.joinClips(paths).toString(), output.getAbsolutePath()).join();
                         for (String path : paths) {
                             new File(path).delete();
@@ -81,10 +90,12 @@ public class VideoGenerationService {
                         storageService.uploadAndDelete(output.getAbsolutePath()).join();
 
                         video.setUrl(output.getName());
+                        video.setUser(appUser);
                         video.setGenerationEnd(System.currentTimeMillis());
 
                         videoRepository.save(video);
-                        return CompletableFuture.completedFuture(video);
+                        clipRepository.saveAll(video.getClips());
+                        return video;
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }

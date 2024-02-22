@@ -38,7 +38,6 @@ public class ClipService {
                         """ + prompt,
                 text
         ).thenCompose(query -> {
-            System.out.println(query);
             var videos = stockVideoService.getVideos(query, 1);
             if (videos.isEmpty()) {
                 throw new IllegalStateException("No videos found for query: " + query);
@@ -63,7 +62,7 @@ public class ClipService {
     }
 
     public CompletableFuture<VideoUtils.Clip> createClip(String prompt, String line, String voice) {
-        return getSuitableStockVideoForText(prompt, line).thenCompose(url -> {
+        return getSuitableStockVideoForText(prompt, line).thenApply(url -> {
             var audio = textToSpeechService.useTTS(line, voice).join();
             var audioFile = VideoUtils.downloadAudio(audio);
             var clip = new VideoUtils.Clip(url, audio, List.of(new VideoUtils.TextSection(line,
@@ -80,7 +79,7 @@ public class ClipService {
             var file = FFMpeg.createClipVideo(clip, url, audioFile.getAbsolutePath()).join();
             clip.setFilePath(file.getAbsolutePath());
             clip.setAudioFilePath(audioFile.getAbsolutePath());
-            return CompletableFuture.completedFuture(clip);
+            return clip;
         });
     }
 

@@ -21,7 +21,7 @@ public class S3Configuration {
     @Bean
     public S3Client s3Client(final AwsCredentials awsCredentials) {
         return S3Client.builder()
-                .region(Region.US_EAST_1)
+                .region(Region.EU_CENTRAL_1)
                 .credentialsProvider(() -> awsCredentials)
                 .build();
     }

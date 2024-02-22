@@ -59,7 +59,6 @@ public class FFMpeg {
         return CompletableFuture.runAsync(() -> {
             try {
                 String command = String.format("ffmpeg %s -y %s", arguments, output);
-                System.out.println(command);
                 ProcessBuilder processBuilder = new ProcessBuilder("bash", "-c", command);
                 processBuilder
                         .inheritIO()

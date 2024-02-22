@@ -12,6 +12,7 @@ import java.util.UUID;
 public class Video {
 
     @Id
+    @GeneratedValue
     private UUID id;
 
     @Column

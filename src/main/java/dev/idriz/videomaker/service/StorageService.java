@@ -49,6 +49,26 @@ public class StorageService {
     }
 
     /**
+     * Uploads a file to S3
+     *
+     * @param path the <b>absolute</b> path of the file to upload
+     * @return a CompletableFuture that will complete when the file has been uploaded and deleted with the URL of the file
+     */
+    public CompletableFuture<String> upload(final String path) {
+        return CompletableFuture.supplyAsync(() -> {
+            File file = new File(path);
+            if (!file.exists()) {
+                throw new IllegalStateException("File does not exist: " + path);
+            }
+            var response = s3Client.putObject(PutObjectRequest.builder()
+                    .bucket(awsBucketName)
+                    .key(file.getName())
+                    .build(), RequestBody.fromFile(file));
+            return s3Client.utilities().getUrl(builder -> builder.bucket(awsBucketName).key(file.getName())).toExternalForm();
+        });
+    }
+
+    /**
      * Downloads a file from S3
      *
      * @param fileName the name of the file to download

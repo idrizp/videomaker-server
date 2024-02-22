@@ -59,7 +59,7 @@ public class AuthService {
         user.setFirstName(firstName);
         user.setLastName(lastName);
         user.setPassword(passwordEncoder.encode(password));
-        user.setEnabled(false);
+        user.setEnabled(true);
         user.setBalance(BigInteger.ZERO);
         user.setEmail(email);
         user.setVideos(new ArrayList<>());

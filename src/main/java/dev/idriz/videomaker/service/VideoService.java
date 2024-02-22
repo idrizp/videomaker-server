@@ -42,14 +42,14 @@ public class VideoService {
     public CompletableFuture<Pair<VideoCreationResult, Video>> createVideo(AppUser appUser, String voice, String title, String... promptLines) {
         var affordable = balanceService.canAfford(appUser, promptLines);
         if (!affordable) {
-            return CompletableFuture.completedFuture(new Pair<>(VideoCreationResult.LOW_BALANCE, null));
+            throw new IllegalArgumentException("User cannot afford video");
         }
         var withdrawn = balanceService.withdrawFromBalance(appUser.getId(), balanceService.getCost(promptLines));
         if (!withdrawn) {
-            return CompletableFuture.completedFuture(new Pair<>(VideoCreationResult.LOW_BALANCE, null));
+            throw new IllegalArgumentException("Failed to withdraw from balance");
         }
         return videoGenerationService
-                .generateVideo(String.join("\n", promptLines), title, voice)
+                .generateVideo(appUser, String.join("\n", promptLines), title, voice)
                 .thenApply(result -> {
                     // TODO: Mail the user the video
                     if (result == null) {
